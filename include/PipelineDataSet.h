@@ -3,7 +3,7 @@
 
 #include "PipelineData.h"
 
-class PipelineDataSet : public PipelineData<PipelineData *>{
+class PipelineDataSet{
 
 };
 

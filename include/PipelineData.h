@@ -4,9 +4,9 @@
 template <class T>
 class PipelineData{
 public:
-  virtual PipelineData();
-  virtual PipelineData(T rawData);
-  virtual T getRawData();
+  PipelineData();
+  PipelineData(T rawData);
+  T getRawData();
 private:
   T data;
 };

@@ -1,14 +1,15 @@
 #ifndef PIPELINE_STEP_H
 #define PIPELINE_STEP_H
 
-class PipelineInstanceID {
-public:
-  virtual PipelineInstanceID();
-};
+typedef struct{
+ unsigned int x;
+ unsigned int y;
+ unsigned int z;
+} PipelineInstanceID;
 
 class PipelineStep {
 public:
-  virtual PipelineStep();
+  PipelineStep(PipelineInstanceID id);
   virtual run();
 protected:
   PipelineInstanceID id;
