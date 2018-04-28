@@ -4,11 +4,11 @@
 template <class T>
 class PipelineData{
 public:
-  PipelineData();
-  PipelineData(T rawData);
-  T getRawData();
-private:
-  T data;
+  PipelineData() {}
+  PipelineData(T rawData) {this->rawData = rawData;}
+  T getRawData() {return this->rawData;}
+protected:
+  T rawData;
 };
 
 #endif

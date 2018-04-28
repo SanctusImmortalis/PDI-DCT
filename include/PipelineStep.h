@@ -9,8 +9,9 @@ typedef struct{
 
 class PipelineStep {
 public:
-  PipelineStep(PipelineInstanceID id);
-  virtual run();
+  PipelineStep() {}
+  PipelineStep(PipelineInstanceID id, PipelineStep* entryPoint, PipelineStep* nextStep) {this->id = id; this->entryPoint = entryPoint; this->nextStep = nextStep;}
+  virtual run() = 0;
 protected:
   PipelineInstanceID id;
   const PipelineStep * entryPoint;

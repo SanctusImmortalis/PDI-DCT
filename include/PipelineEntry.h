@@ -6,9 +6,9 @@
 
 class PipelineEntry : public PipelineStep {
 public:
-  PipelineEntry();
-  PipelineEntry(const PipelineDataSet* dataSet);
-  const PipelineDataSet* getDataSet();
+  PipelineEntry() {this->entryPoint = this;}
+  PipelineEntry(const PipelineDataSet* dataSet) { this->entryPoint = this; this->dataSet = dataSet;}
+  const PipelineDataSet* getDataSet() {return this->dataSet;}
 protected:
   const PipelineDataSet* dataSet;
 };
