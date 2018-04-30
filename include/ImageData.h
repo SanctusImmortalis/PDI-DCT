@@ -10,8 +10,9 @@ typedef struct{
 } RGBPixel;
 
 class RGBImageData : public PipelineData<unsigned char*>{
-using PipelineData<unsigned char*>::PipelineData;
 public:
+  RGBImageData() {this->width = -1; this->height= -1; this->nOfChannels = 0; this->fromSTBI = false; this->fromCALLOC = false;}
+  RGBImageData(unsigned char* rawData) {this->width = -1; this->height= -1; this->nOfChannels = 0; this->rawData = rawData; this->fromSTBI = false; this->fromCALLOC = false;}
   RGBImageData(char const* filename);
   RGBImageData(int x, int y);
   ~RGBImageData();
@@ -20,17 +21,21 @@ public:
   bool isOutOfBounds(int x, int y) {return (x<0)||(y<0)||(x>=(this->width))||(y>=(this->height));}
 protected:
   int width, height, nOfChannels;
+  bool fromSTBI, fromCALLOC;
 };
 
 class YImageData : public PipelineData<double*>{
-using PipelineData<double*>::PipelineData;
 public:
-  YImageData(RGBImageData* rgbImage);
+  YImageData() {this->fromCALLOC = false;}
+  YImageData(double* rawData) {this->rawData = rawData; this->fromCALLOC = false;}
+  YImageData(int x, int y);
+  ~YImageData();
   double getPixel(int x, int y);
   bool setPixel(double pixel, int x, int y);
   bool isOutOfBounds(int x, int y) {return (x<0)||(y<0)||(x>=(this->width))||(y>=(this->height));}
 protected:
   int width, height;
+  bool fromCALLOC;
 };
 
 #endif

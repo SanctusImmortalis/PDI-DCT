@@ -1,21 +1,20 @@
 #ifndef PIPELINE_STEP_H
 #define PIPELINE_STEP_H
 
-typedef struct{
- unsigned int x;
- unsigned int y;
- unsigned int z;
-} PipelineInstanceID;
+#include <cstdlib>
+#include "PipelineDataSet.h"
 
 class PipelineStep {
 public:
-  PipelineStep() {}
-  PipelineStep(PipelineInstanceID id, PipelineStep* entryPoint, PipelineStep* nextStep) {this->id = id; this->entryPoint = entryPoint; this->nextStep = nextStep;}
-  virtual run() = 0;
+  PipelineStep() {this->nextStep = NULL; this->isSetup = false;}
+  PipelineStep(PipelineStep* nextStep) {this->nextStep = nextStep; this->isSetup = false;}
+  void setup(PipelineDataSet* dataSet) {if(dataSet!=NULL && this->nextStep!=NULL) {this->dataSet = dataSet; (this->nextStep)->setup(this->dataSet); this->isSetup = true;} }
+  virtual void run() = 0;
 protected:
-  PipelineInstanceID id;
-  const PipelineStep * entryPoint;
-  const PipelineStep * nextStep;
+  virtual bool func(int x, int y, int z) = 0;
+  bool isSetup;
+  PipelineDataSet* dataSet;
+  PipelineStep * nextStep;
 };
 
 #endif
