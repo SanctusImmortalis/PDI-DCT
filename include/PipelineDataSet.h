@@ -4,7 +4,8 @@
 #include "PipelineData.h"
 
 class PipelineDataSet{
-
+public:
+  PipelineDataSet() {}
 };
 
 #endif

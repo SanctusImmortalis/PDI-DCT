@@ -18,6 +18,8 @@ public:
   ~RGBImageData();
   RGBPixel getPixel(int x, int y);
   bool setPixel(RGBPixel pixel, int x, int y);
+  int getWidth() {return this->width;}
+  int getHeight() {return this->height;}
   bool isOutOfBounds(int x, int y) {return (x<0)||(y<0)||(x>=(this->width))||(y>=(this->height));}
 protected:
   int width, height, nOfChannels;
@@ -32,6 +34,8 @@ public:
   ~YImageData();
   double getPixel(int x, int y);
   bool setPixel(double pixel, int x, int y);
+  int getWidth() {return this->width;}
+  int getHeight() {return this->height;}
   bool isOutOfBounds(int x, int y) {return (x<0)||(y<0)||(x>=(this->width))||(y>=(this->height));}
 protected:
   int width, height;
