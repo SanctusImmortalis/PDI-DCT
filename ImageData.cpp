@@ -3,6 +3,14 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "include/stb_image.h"
 
+unsigned char clampRGB(int p){
+  return (unsigned char) (p<0)?0:((p>255)?255:p);
+}
+
+double clampY(double p){
+  return (p<0.0f)?0.0f:((p>1.0f)?1.0f:p);
+}
+
 RGBImageData::RGBImageData(char const* filename){
   this->rawData = stbi_load(filename, &(this->width), &(this->height), &(this->nOfChannels), 3);
   this->fromSTBI = true;
@@ -51,9 +59,9 @@ bool RGBImageData::setPixel(RGBPixel pixel, int x, int y){
   }
   int coord = (x + y*(this->width))*3;
   unsigned char* arr = this->rawData;
-  arr[coord] = pixel.r;
-  arr[coord + 1] = pixel.g;
-  arr[coord + 2] = pixel.b;
+  arr[coord] = clampRGB(pixel.r);
+  arr[coord + 1] = clampRGB(pixel.g);
+  arr[coord + 2] = clampRGB(pixel.b);
   return true;
 }
 
@@ -91,6 +99,6 @@ bool YImageData::setPixel(double pixel, int x, int y){
   }
   int coord = (x + y*(this->width));
   double* arr = this->rawData;
-  arr[coord] = pixel;
+  arr[coord] = clampY(pixel);
   return true;
 }

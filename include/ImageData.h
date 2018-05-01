@@ -4,10 +4,14 @@
 #include "PipelineData.h"
 
 typedef struct{
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
+  int r;
+  int g;
+  int b;
 } RGBPixel;
+
+unsigned char clampRGB(int p);
+
+double clampY(double p);
 
 class RGBImageData : public PipelineData<unsigned char*>{
 public:

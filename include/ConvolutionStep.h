@@ -11,10 +11,11 @@
 
 class ConvolutionDataSet : public PipelineDataSet{
 public:
-  RGBConvolutionDataSet(RGBImageData* rgbsrc, YImageData* ysrc, YImageData* msk, YImageData* ydst, RGBImageData* rgbdst) {this->rgbsource = rgbsrc; this->ysource = ysrc; this->mask = msk; this->ydest = ydst; this->rgbdest = rgbdst;}
+  RGBConvolutionDataSet(RGBImageData* rgbsrc, YImageData* ysrc, YImageData* msk, YImageData* ydst, RGBImageData* rgbdst) {this->rgbsource = rgbsrc; this->ysource = ysrc; this->mask = msk; this->ydest = ydst; this->rgbdest = rgbdst; this->result = CONVOLUTION_SUCCESS;}
   RGBImageData* rgbsource;
   YImageData* ysource;
   YImageData* mask;
+  int midx, midy;
   YImageData* ydest;
   RGBImageData* rgbdest;
   int result;
@@ -22,10 +23,18 @@ public:
 
 class RGBtoYStep : public PipelineStep{
 using PipelineStep::PipelineStep;
+public:
+  void run();
+protected:
+  bool func(int x, int y, int z);
 };
 
 class ConvolutionStep : public PipelineStep{
 using PipelineStep::PipelineStep;
+public:
+  void run();
+protected:
+  bool func(int x, int y, int z);
 };
 
 #endif
