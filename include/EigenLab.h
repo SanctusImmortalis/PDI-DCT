@@ -10,7 +10,7 @@
 #ifndef EigenLab_H
 #define EigenLab_H
 
-#include <Eigen/Dense>
+#include "Eigen/Dense"
 #include <iomanip>
 #include <type_traits>
 #include <map>
@@ -52,38 +52,38 @@ namespace EigenLab
 	private:
 		// Local matrix data.
 		Derived mLocal;
-		
+
 		// Map to shared matrix data (map points to mLocal if the data is local).
 		// !!! This map promises to ALWAYS point to the matrix data whether it's
 		// stored locally in mLocal or externally in some shared memory.
 		Eigen::Map<Derived> mShared;
-		
+
 		// Flag indicating whether the local data is being used.
 		bool mIsLocal;
-		
+
 	public:
 		// Access mapped data (whether its local or shared).
 		// !!! matrix() promises to ALWAYS return a map to the matrix data whether it's
 		// stored locally in mLocal or externally in some shared memory.
 		inline Eigen::Map<Derived> & matrix() { return mShared; }
 		inline const Eigen::Map<Derived> & matrix() const { return mShared; }
-		
+
 		// Access local data.
 		// !!! WARNING! This data is ONLY valid if isLocal() is true.
 		// !!! WARNING! If you change the local data via this method, you MUST call mapLocal() immediately afterwards.
 		// In most cases, you're best off accessing the matrix data via matrix() instead.
 		inline Derived & local() { return mLocal; }
 		inline const Derived & local() const { return mLocal; }
-		
+
 		// Is mapped data local?
 		inline bool isLocal() const { return mIsLocal; }
-		
+
 		// Set mapped data to point to local data.
 		inline void mapLocal() { new (& mShared) Eigen::Map<Derived>(mLocal.data(), mLocal.rows(), mLocal.cols()); mIsLocal = true; }
-		
+
 		//  Copy shared data to local data (if needed).
 		inline void copySharedToLocal() { if(!isLocal()) { mLocal = mShared; mapLocal(); } }
-		
+
 		// Set local data.
 		Value() : mLocal(1, 1), mShared(mLocal.data(), mLocal.rows(), mLocal.cols()), mIsLocal(true) {}
 		Value(const typename Derived::Scalar s) : mLocal(Derived::Constant(1, 1, s)), mShared(mLocal.data(), mLocal.rows(), mLocal.cols()), mIsLocal(true) {}
@@ -94,13 +94,13 @@ namespace EigenLab
 		inline void setLocal(const typename Derived::Scalar * data, size_t rows = 1, size_t cols = 1) { setShared(data, rows, cols); copySharedToLocal(); }
 		inline Value & operator = (const typename Derived::Scalar s) { setLocal(s); return (* this); }
 		inline Value & operator = (const Derived & mat) { setLocal(mat); return (* this); }
-		
+
 		// Set shared data.
 		Value(const typename Derived::Scalar * data, size_t rows = 1, size_t cols = 1) : mShared(const_cast<typename Derived::Scalar *>(data), rows, cols), mIsLocal(false) {}
 		inline void setShared(const typename Derived::Scalar * data, size_t rows = 1, size_t cols = 1) { new (& mShared) Eigen::Map<Derived>(const_cast<typename Derived::Scalar *>(data), rows, cols); mIsLocal = false; }
 		inline void setShared(const Derived & mat) { setShared(mat.data(), mat.rows(), mat.cols()); }
 		inline void setShared(const Value & val) { setShared(val.matrix().data(), val.matrix().rows(), val.matrix().cols()); }
-		
+
 		// Set to local or shared data dependent on whether val maps its own local data or some other shared data.
 		Value(const Value & val) : mLocal(1, 1), mShared(mLocal.data(), mLocal.rows(), mLocal.cols()) { (* this) = val; }
 		inline Value & operator = (const Value & val) { if(val.isLocal()) { setLocal(val); } else { setShared(val); } return (* this); }
@@ -108,7 +108,7 @@ namespace EigenLab
 	typedef Value<Eigen::MatrixXd> ValueXd;
 	typedef Value<Eigen::MatrixXf> ValueXf;
 	typedef Value<Eigen::MatrixXi> ValueXi;
-	
+
 	// check if a class has a comparison operator (ie. std::complex does not)
 	template<typename T>
 	struct has_operator_lt_impl
@@ -121,7 +121,7 @@ namespace EigenLab
 	};
 	template<typename T>
 	struct has_operator_lt : has_operator_lt_impl<T>::type {};
-	
+
 	//----------------------------------------
 	// Equation parser.
 	//
@@ -133,15 +133,15 @@ namespace EigenLab
 	public:
 		// A map to hold named values.
 		typedef std::map<std::string, Value<Derived> > ValueMap;
-		
+
 	private:
 		// Variables are stored in a map of named values.
 		ValueMap mVariables;
-		
+
 		// Operator symbols and function names used by the parser.
 		std::string mOperators1, mOperators2;
 		std::vector<std::string> mFunctions;
-		
+
 		// Expressions are parsed by first splitting them into chunks.
 		struct Chunk {
 			std::string field;
@@ -155,30 +155,30 @@ namespace EigenLab
 		typedef typename Derived::Index Index;
 		bool mCacheChunkedExpressions;
 		std::map<std::string, ChunkArray> mCachedChunkedExpressions;
-		
+
 	public:
 		// Access to named variables.
 		// !!! WARNING! var(name) will create the variable name if it does not already exist.
 		inline ValueMap & vars() { return mVariables; }
 		inline Value<Derived> & var(const std::string & name) { return mVariables[name]; }
-		
+
 		// Check if a variable exists.
 		inline bool hasVar(const std::string & name) { return isVariable(name); }
-		
+
 		// Delete a variable.
 		inline void clearVar(const std::string & name) { typename ValueMap::iterator it = mVariables.find(name); if(it != mVariables.end()) mVariables.erase(it); }
-		
+
 		// Expression chunk caching.
 		inline bool cacheExpressions() const { return mCacheChunkedExpressions; }
 		inline void setCacheExpressions(bool b) { mCacheChunkedExpressions = b; }
 		inline void clearCachedExpressions() { mCachedChunkedExpressions.clear(); }
-		
+
 		Parser();
 		~Parser() { clearCachedExpressions(); }
-		
+
 		// Evaluate an expression and return the result in a value wrapper.
 		Value<Derived> eval(const std::string & expression);
-		
+
 	private:
 		void splitEquationIntoChunks(const std::string & expression, ChunkArray & chunks, std::string & code);
 		std::string::const_iterator findClosingBracket(const std::string & str, const std::string::const_iterator openingBracket, const char closingBracket) const;
@@ -190,7 +190,7 @@ namespace EigenLab
 		bool evalFunction_1_lt(const std::string & name, Value<Derived> & arg, Value<Derived> & result, std::true_type);
 		bool evalFunction_2_lt(const std::string & name, Value<Derived> & arg0, Value<Derived> & arg1, Value<Derived> & result, std::false_type);
 		bool evalFunction_2_lt(const std::string & name, Value<Derived> & arg0, Value<Derived> & arg1, Value<Derived> & result, std::true_type);
-		
+
 		void evalNumericRange(const std::string & str, Value<Derived> & mat);
 		inline bool isVariable(const std::string & name) const { return mVariables.count(name) > 0; }
 		inline bool isOperator(const char c) const { return (std::find(mOperators1.begin(), mOperators1.end(), c) != mOperators1.end()); }
@@ -209,7 +209,7 @@ namespace EigenLab
 		std::string textRepresentation(Value<Derived> & val, size_t maxRows = 2, size_t maxCols = 2, int precision = 0);
 #	endif
 #endif
-		
+
 	public:
 		static std::string trim(const std::string & str);
 		static std::vector<std::string> split(const std::string & str, const char delimeter);
@@ -225,7 +225,7 @@ namespace EigenLab
 	typedef Parser<Eigen::MatrixXd> ParserXd;
 	typedef Parser<Eigen::MatrixXf> ParserXf;
 	typedef Parser<Eigen::MatrixXi> ParserXi;
-	
+
 	//----------------------------------------
 	// Function definitions.
 	//----------------------------------------
@@ -272,7 +272,7 @@ namespace EigenLab
 		mFunctions.push_back("ones");
 		mFunctions.push_back("eye");
 	}
-	
+
 	template <typename Derived>
 	Value<Derived> Parser<Derived>::eval(const std::string & expression)
 	{
@@ -305,7 +305,7 @@ namespace EigenLab
 		}
 		return chunks[0].value;
 	}
-	
+
 	template <typename Derived>
 	void Parser<Derived>::splitEquationIntoChunks(const std::string & expression, ChunkArray & chunks, std::string & code)
 	{
@@ -484,7 +484,7 @@ namespace EigenLab
 		if(cacheExpressions())
 			mCachedChunkedExpressions[expression] = chunks;
 	}
-	
+
 	template <typename Derived>
 	std::string::const_iterator Parser<Derived>::findClosingBracket(const std::string & str, const std::string::const_iterator openingBracket, const char closingBracket) const
 	{
@@ -534,7 +534,7 @@ namespace EigenLab
 				}
 				if(firstStr.empty() || lastStr.empty())
 					throw std::runtime_error("Missing indices for '" + str + "'.");
-				
+
 				pos = firstStr.find("end");
 				if(pos != std::string::npos) {
 					firstStr = firstStr.substr(0, pos) + numberToString<int>(numIndices - 1) + firstStr.substr(pos + 3);
@@ -543,27 +543,27 @@ namespace EigenLab
 				if(pos != std::string::npos) {
 					lastStr = lastStr.substr(0, pos) + numberToString<int>(numIndices - 1) + lastStr.substr(pos + 3);
 				}
-				
+
 				valuei = parseri.eval(firstStr);
 				if(valuei.matrix().size() != 1)
 					throw std::runtime_error("Invalid indices '" + str + "'.");
 				(* first) = valuei.matrix()(0, 0);
-				
+
 				valuei = parseri.eval(lastStr);
 				if(valuei.matrix().size() != 1)
 					throw std::runtime_error("Invalid indices '" + str + "'.");
 				(* last) = valuei.matrix()(0, 0);
-				
+
 				return;
 			}
 		}
 		std::string firstStr = str;
-		
+
 		pos = firstStr.find("end");
 		if(pos != std::string::npos) {
 			firstStr = firstStr.substr(0, pos) + numberToString<int>(numIndices - 1) + firstStr.substr(pos + 3);
 		}
-		
+
 		valuei = parseri.eval(firstStr);
 		if(valuei.matrix().size() != 1)
 			throw std::runtime_error("Invalid index '" + str + "'.");
@@ -788,7 +788,7 @@ namespace EigenLab
 	{
 		return false;
 	}
-	
+
 	template <typename Derived>
 	void Parser<Derived>::evalFunction(const std::string & name, std::vector<std::string> & args, Value<Derived> & result)
 	{
@@ -1000,7 +1000,7 @@ namespace EigenLab
 		argsStr += ")";
 		throw std::runtime_error("Invalid function/arguments for '" + name + argsStr + "'.");
 	}
-	
+
 	template <typename Derived>
 	void Parser<Derived>::evalNumericRange(const std::string & str, Value<Derived> & mat)
 	{
@@ -1058,7 +1058,7 @@ namespace EigenLab
 			}
 		}
 	}
-	
+
 	template <typename Derived>
 	bool Parser<Derived>::isOperator(const std::string & str) const
 	{
@@ -1070,7 +1070,7 @@ namespace EigenLab
 		}
 		return false;
 	}
-	
+
 	template <typename Derived>
 	void Parser<Derived>::evalIndices(ChunkArray & chunks)
 	{
@@ -1109,7 +1109,7 @@ namespace EigenLab
 #	endif
 #endif
 	}
-	
+
 	template <typename Derived>
 	void Parser<Derived>::evalNegations(ChunkArray & chunks)
 	{
@@ -1450,7 +1450,7 @@ namespace EigenLab
 #	endif
 #endif
 	}
-	
+
 #ifdef DEBUG
 #	ifdef EIGENLAB_DEBUG
 	template <typename Derived>
@@ -1479,14 +1479,14 @@ namespace EigenLab
 			std::cout << "__";
 		}
 	}
-	
+
 	template <typename Derived>
 	void Parser<Derived>::printVars(size_t maxRows, size_t maxCols, int precision)
 	{
 		for(typename ValueMap::iterator it = mVariables.begin(); it != mVariables.end(); it++)
 			std::cout << it->first << " (" << it->second.matrix().rows() << "x" << it->second.matrix().cols() << ") = " << textRepresentation(it->second, maxRows, maxCols, precision) << std::endl;
 	}
-	
+
 	template <typename Derived>
 	std::string Parser<Derived>::textRepresentation(Value<Derived> & val, size_t maxRows, size_t maxCols, int precision)
 	{
@@ -1508,7 +1508,7 @@ namespace EigenLab
 	}
 #	endif // #ifdef EIGENLAB_DEBUG
 #endif // #ifdef DEBUG
-	
+
 	template <typename Derived>
 	std::string Parser<Derived>::trim(const std::string & str)
 	{
@@ -1519,7 +1519,7 @@ namespace EigenLab
 		while(first < last && isspace(*last)) last--;
 		return std::string(first, last + 1);
 	}
-	
+
 	template <typename Derived>
 	std::vector<std::string> Parser<Derived>::split(const std::string & str, const char delimeter)
 	{
@@ -1534,7 +1534,7 @@ namespace EigenLab
 		args.push_back(std::string(i0, str.end()));
 		return args;
 	}
-	
+
 	template <typename Derived>
 	template <typename T>
 	bool Parser<Derived>::isNumber(const std::string & str, T * num)
@@ -1548,7 +1548,7 @@ namespace EigenLab
 		}
 		return (!iss.fail() && !iss.bad() && iss.eof());
 	}
-	
+
 	template <typename Derived>
 	template<typename T>
 	T Parser<Derived>::stringToNumber(const std::string & str)
@@ -1560,7 +1560,7 @@ namespace EigenLab
 			throw std::runtime_error("Failed to convert " + str + " to a number.");
 		return number;
 	}
-	
+
 	template <typename Derived>
 	template<typename T>
 	std::string Parser<Derived>::numberToString(T num, int precision)
@@ -1572,7 +1572,7 @@ namespace EigenLab
 			oss << num;
 		return oss.str();
 	}
-	
+
 #ifdef DEBUG
 	template <typename Derived>
 	void
@@ -1686,13 +1686,13 @@ namespace EigenLab
 		std::cout << "Make sure this function completes successfuly and prints the message "
 			"'Successfully completed unit test for EigenLab with no failures.'" << std::endl;
 		std::cout << std::endl;
-		
+
 		size_t numFails = 0;
 		Value<Derived> resultValue;
 		Derived resultMatrix;
 		Derived temp;
 		typename Derived::Scalar s = 2;
-		
+
 		Derived a34 = Derived::Random(3, 4);
 		Derived b34 = Derived::Random(3, 4);
 		Derived c43 = Derived::Random(4, 3);
@@ -1701,161 +1701,161 @@ namespace EigenLab
 		//std::cout << "b34=" << std::endl << b34 << std::endl << std::endl;
 		//std::cout << "c43=" << std::endl << c43 << std::endl << std::endl;
 		//std::cout << "v=" << std::endl << v << std::endl << std::endl;
-		
+
 		var("a").setShared(a34);
 		var("b").setShared(b34);
 		var("c").setShared(c43);
 		var("v").setShared(v);
 		var("s").setShared(& s);
-		
+
 		////////////////////////////////////////
 		std::cout << "Testing basic operations..." << std::endl << std::endl;
 		////////////////////////////////////////
-		
+
 		std::cout << "Test matrix addition a + b: ";
 		resultValue = eval("a + b");
 		resultMatrix = a34 + b34;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix/scalar addition a + s: ";
 		resultValue = eval("a + s");
 		resultMatrix = a34.array() + s;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test scalar/matrix addition s + b: ";
 		resultValue = eval("s + b");
 		resultMatrix = b34.array() + s;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix addition a .+ b: ";
 		resultValue = eval("a .+ b");
 		resultMatrix = a34 + b34;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix/scalar addition a .+ s: ";
 		resultValue = eval("a .+ s");
 		resultMatrix = a34.array() + s;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test scalar/matrix addition s .+ b: ";
 		resultValue = eval("s .+ b");
 		resultMatrix = b34.array() + s;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix subtraction a - b: ";
 		resultValue = eval("a - b");
 		resultMatrix = a34 - b34;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix/scalar subtraction a - s: ";
 		resultValue = eval("a - s");
 		resultMatrix = a34.array() - s;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test scalar/matrix subtraction s - b: ";
 		resultValue = eval("s - b");
 		resultMatrix = (-b34.array()) + s;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix subtraction a .- b: ";
 		resultValue = eval("a .- b");
 		resultMatrix = a34 - b34;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix/scalar subtraction a .- s: ";
 		resultValue = eval("a .- s");
 		resultMatrix = a34.array() - s;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test scalar/matrix subtraction s .- b: ";
 		resultValue = eval("s .- b");
 		resultMatrix = (-b34.array()) + s;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix negation -a: ";
 		resultValue = eval("-a");
 		resultMatrix = -a34;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test scalar negation -s: ";
 		resultValue = eval("-s");
 		resultMatrix.setConstant(1, 1, -s);
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix coefficient-wise multiplication a .* b: ";
 		resultValue = eval("a .* b");
 		resultMatrix = a34.array() * b34.array();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix/scalar coefficient-wise multiplication a * s: ";
 		resultValue = eval("a * s");
 		resultMatrix = a34.array() * s;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test scalar/matrix coefficient-wise multiplication s * b: ";
 		resultValue = eval("s * b");
 		resultMatrix = b34.array() * s;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix/scalar coefficient-wise multiplication a .* s: ";
 		resultValue = eval("a .* s");
 		resultMatrix = a34.array() * s;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test scalar/matrix coefficient-wise multiplication s .* b: ";
 		resultValue = eval("s .* b");
 		resultMatrix = b34.array() * s;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix coefficient-wise division a ./ b: ";
 		resultValue = eval("a ./ b");
 		resultMatrix = a34.array() / b34.array();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix/scalar coefficient-wise division a / s: ";
 		resultValue = eval("a / s");
 		resultMatrix = a34.array() / s;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test scalar/matrix coefficient-wise division s / b: ";
 		resultValue = eval("s / b");
 		resultMatrix = Derived::Constant(b34.rows(), b34.cols(), s).array() / b34.array();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix/scalar coefficient-wise division a ./ s: ";
 		resultValue = eval("a ./ s");
 		resultMatrix = a34.array() / s;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test scalar/matrix coefficient-wise division s ./ b: ";
 		resultValue = eval("s ./ b");
 		resultMatrix = Derived::Constant(b34.rows(), b34.cols(), s).array() / b34.array();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix coefficient-wise power a .^ b: ";
 		resultValue = eval("abs(a) .^ b");
 		resultMatrix = a34;
@@ -1868,7 +1868,7 @@ namespace EigenLab
 		//		std::cout << "mat=" << std::endl << resultMatrix << std::endl << std::endl;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix/scalar coefficient-wise power a ^ s: ";
 		resultValue = eval("abs(a) ^ s");
 		resultMatrix = a34;
@@ -1876,7 +1876,7 @@ namespace EigenLab
 			resultMatrix(i) = pow(std::abs(a34(i)), s);
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test scalar/matrix coefficient-wise power s ^ b: ";
 		resultValue = eval("s ^ b");
 		resultMatrix = b34;
@@ -1884,7 +1884,7 @@ namespace EigenLab
 			resultMatrix(i) = pow(s, b34(i));
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix/scalar coefficient-wise power a .^ s: ";
 		resultValue = eval("abs(a) .^ s");
 		resultMatrix = a34;
@@ -1892,7 +1892,7 @@ namespace EigenLab
 			resultMatrix(i) = pow(std::abs(a34(i)), s);
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test scalar/matrix coefficient-wise power s .^ b: ";
 		resultValue = eval("s .^ b");
 		resultMatrix = b34;
@@ -1900,113 +1900,113 @@ namespace EigenLab
 			resultMatrix(i) = pow(s, b34(i));
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix multiplication a * b: ";
 		resultValue = eval("a * c");
 		resultMatrix = a34 * c43;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test grouped subexpression (a + b) * c: ";
 		resultValue = eval("(a + b) * c");
 		resultMatrix = (a34 + b34) * c43;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test nested groups ((a + (b * 3 + 1)) * c).^2: ";
 		resultValue = eval("((a + (b * 3 + 1)) * c).^2");
 		resultMatrix = ((a34.array() + (b34.array() * 3 + 1)).matrix() * c43).array().pow(2);
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		////////////////////////////////////////
 		std::cout << std::endl << "Testing coefficient and submatrix block access..." << std::endl << std::endl;
 		////////////////////////////////////////
-		
+
 		std::cout << "Test matrix coefficient access a(i,j): ";
 		resultValue = eval("a(1,2)");
 		resultMatrix.setConstant(1, 1, a34(1,2));
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test submatrix block access a(i:p,j:q): ";
 		resultValue = eval("a(1:2,2:3)");
 		resultMatrix = a34.block(1, 2, 2, 2);
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test submatrix block access using 'end' and ':' identifiers a(i:end,:): ";
 		resultValue = eval("a(1:end,:)");
 		resultMatrix = a34.block(1, 0, a34.rows() - 1, a34.cols());
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test submatrix block access using subexpressions: ";
 		resultValue = eval("a(2-1:2-1,0+1:3-1)");
 		resultMatrix = a34.block(1, 1, 1, 2);
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test submatrix block access using subexpressions with 'end' keyword: ";
 		resultValue = eval("a(2-1:end-1,0+1:end-1)");
 		resultMatrix = a34.block(1, 1, a34.rows() - 2, a34.cols() - 2);
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test vector coefficient access v(i): ";
 		resultValue = eval("v(5)");
 		resultMatrix.setConstant(1, 1, v(5));
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test subvector segment access v(i:j): ";
 		resultValue = eval("v(3:6)");
 		resultMatrix = v.block(0, 3, 1, 4);
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test subvector segment access using 'end' identifier v(i:end): ";
 		resultValue = eval("v(5:end)");
 		resultMatrix = v.block(0, 5, 1, v.cols() - 5);
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test subvector segment access using ':' identifier v(:): ";
 		resultValue = eval("v(:)");
 		resultMatrix = v;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test subvector segment access using subexpressions: ";
 		resultValue = eval("v(3-1:5+2)");
 		resultMatrix = v.block(0, 2, 1, 6);
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test subvector segment access using subexpressions with 'end' keyword: ";
 		resultValue = eval("v((end-8)*2:end-3)");
 		resultMatrix = v.block(0, 2, 1, 5);
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		////////////////////////////////////////
 		std::cout << std::endl << "Testing vector/matrix expressions..." << std::endl << std::endl;
 		////////////////////////////////////////
-		
+
 		std::cout << "Test numeric range expression [i:j]: ";
 		resultValue = eval("[2:5]");
 		resultMatrix.resize(1, 4);
 		resultMatrix << 2, 3, 4, 5;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test numeric range expression [i:s:j]: ";
 		resultValue = eval("[2:2:10]");
 		resultMatrix.resize(1, 5);
 		resultMatrix << 2, 4, 6, 8, 10;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test numeric range with subexpressions: ";
 		resultValue = eval("[6-2:5*2-3]");
 		std::cout << "val=" << std::endl << resultValue.matrix() << std::endl << std::endl;
@@ -2014,214 +2014,214 @@ namespace EigenLab
 		resultMatrix << 4, 5, 6, 7;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix expression [[1, 2]; [3, 4]]: ";
 		resultValue = eval("[[1, 2]; [3, 4]]");
 		resultMatrix.resize(2, 2);
 		resultMatrix << 1, 2, 3, 4;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test matrix expression [  1, 2, 3;	4:6 ]: ";
 		resultValue = eval("[1, 2, 3;	4:6]");
 		resultMatrix.resize(2, 3);
 		resultMatrix << 1, 2, 3, 4, 5, 6;
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		////////////////////////////////////////
 		std::cout << std::endl << "Testing coefficient-wise functions..." << std::endl << std::endl;
 		////////////////////////////////////////
-		
+
 		std::cout << "Test coefficient-wise abs(a): ";
 		resultValue = eval("abs(a)");
 		resultMatrix.resize(3, 4);
 		resultMatrix.real() = a34.array().abs();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test coefficient-wise sqrt(a): ";
 		resultValue = eval("sqrt(abs(a))");
 		resultMatrix.real() = a34.array().abs().sqrt();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test coefficient-wise exp(a): ";
 		resultValue = eval("exp(abs(a) + 0.001)");
 		resultMatrix.real() = (a34.array().abs() + 0.001).exp();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test coefficient-wise log(a): ";
 		resultValue = eval("log(abs(a) + 0.001)");
 		resultMatrix.real() = (a34.array().abs() + 0.001).log();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test coefficient-wise log10(a): ";
 		resultValue = eval("log10(abs(a) + 0.001)");
 		resultMatrix.real() = (a34.array().abs() + 0.001).log() * (1.0 / log(10));
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test coefficient-wise sin(a): ";
 		resultValue = eval("sin(a)");
 		resultMatrix = a34.array().sin();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test coefficient-wise cos(a): ";
 		resultValue = eval("cos(a)");
 		resultMatrix = a34.array().cos();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test coefficient-wise tan(a): ";
 		resultValue = eval("tan(a)");
 		resultMatrix = a34.array().tan();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test coefficient-wise asin(a): ";
 		resultValue = eval("asin(a)");
 		resultMatrix = a34.array().asin();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test coefficient-wise acos(a): ";
 		resultValue = eval("acos(a)");
 		resultMatrix = a34.array().acos();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		////////////////////////////////////////
 		std::cout << std::endl << "Testing matrix reduction functions..." << std::endl << std::endl;
 		////////////////////////////////////////
-		
+
 		std::cout << "Test trace(a): ";
 		resultValue = eval("trace(a)");
 		resultMatrix.setConstant(1, 1, a34.trace());
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test norm(a): ";
 		resultValue = eval("norm(a)");
 		resultMatrix.setConstant(1, 1, a34.norm());
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test size(a, 0): ";
 		resultValue = eval("size(a, 0)");
 		resultMatrix.setConstant(1, 1, a34.rows());
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test size(a, 1): ";
 		resultValue = eval("size(a, 1)");
 		resultMatrix.setConstant(1, 1, a34.cols());
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		test_w_lt(numFails, s, a34, b34, c43, v, has_operator_lt<typename Derived::Scalar>());
-		
+
 		std::cout << "Test mean(a): ";
 		resultValue = eval("mean(a)");
 		resultMatrix.setConstant(1, 1, a34.mean());
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test mean(a, 0): ";
 		resultValue = eval("mean(a, 0)");
 		resultMatrix = a34.colwise().mean();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test mean(a, 1): ";
 		resultValue = eval("mean(a, 1)");
 		resultMatrix = a34.rowwise().mean();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test sum(a): ";
 		resultValue = eval("sum(a)");
 		resultMatrix.setConstant(1, 1, a34.sum());
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test sum(a, 0): ";
 		resultValue = eval("sum(a, 0)");
 		resultMatrix = a34.colwise().sum();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test sum(a, 1): ";
 		resultValue = eval("sum(a, 1)");
 		resultMatrix = a34.rowwise().sum();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test prod(a): ";
 		resultValue = eval("prod(a)");
 		resultMatrix.setConstant(1, 1, a34.prod());
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test prod(a, 0): ";
 		resultValue = eval("prod(a, 0)");
 		resultMatrix = a34.colwise().prod();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test prod(a, 1): ";
 		resultValue = eval("prod(a, 1)");
 		resultMatrix = a34.rowwise().prod();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		////////////////////////////////////////
 		std::cout << std::endl << "Testing matrix functions..." << std::endl << std::endl;
 		////////////////////////////////////////
-		
+
 		std::cout << "Test transpose(a): ";
 		resultValue = eval("transpose(a)");
 		resultMatrix = a34.transpose();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test conjugate(a): ";
 		resultValue = eval("conjugate(a)");
 		resultMatrix = a34.conjugate();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test adjoint(a): ";
 		resultValue = eval("adjoint(a)");
 		resultMatrix = a34.adjoint();
 		if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
         else { std::cout << "FAIL" << std::endl; ++numFails; }
-        
+
         ////////////////////////////////////////
         std::cout << std::endl << "Testing matrix initializers..." << std::endl << std::endl;
         ////////////////////////////////////////
-        
+
         std::cout << "Test zeros(5): ";
         resultValue = eval("zeros(5)");
         resultMatrix = Derived::Zero(5, 5);
         if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
         else { std::cout << "FAIL" << std::endl; ++numFails; }
-        
+
         std::cout << "Test ones(5): ";
         resultValue = eval("ones(5)");
         resultMatrix = Derived::Ones(5, 5);
         if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
         else { std::cout << "FAIL" << std::endl; ++numFails; }
-        
+
         std::cout << "Test eye(5): ";
         resultValue = eval("eye(5)");
         resultMatrix = Derived::Identity(5, 5);
         if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
         else { std::cout << "FAIL" << std::endl; ++numFails; }
-        
+
         try {
             std::cout << "Test zeros(5.2): ";
             resultValue = eval("zeros(5.2)"); // <-- Should NOT succeed!!!
@@ -2230,7 +2230,7 @@ namespace EigenLab
             std::cout << err.what() << std::endl;
             std::cout << "Exception caught, so we're OK" << std::endl;
         }
-        
+
         try {
             std::cout << "Test eye(-3): ";
             resultValue = eval("eye(-3)"); // <-- Should NOT succeed!!!
@@ -2239,55 +2239,55 @@ namespace EigenLab
             std::cout << err.what() << std::endl;
             std::cout << "Exception caught, so we're OK" << std::endl;
         }
-        
+
         std::cout << "Test zeros(4,7): ";
         resultValue = eval("zeros(4,7)");
         resultMatrix = Derived::Zero(4, 7);
         if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
         else { std::cout << "FAIL" << std::endl; ++numFails; }
-        
+
         std::cout << "Test ones(4,7): ";
         resultValue = eval("ones(4,7)");
         resultMatrix = Derived::Ones(4, 7);
         if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
         else { std::cout << "FAIL" << std::endl; ++numFails; }
-        
+
         std::cout << "Test eye(4,7): ";
         resultValue = eval("eye(4,7)");
         resultMatrix = Derived::Identity(4, 7);
         if(resultMatrix.isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
         else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		////////////////////////////////////////
 		std::cout << std::endl << "Testing variable assignment..." << std::endl << std::endl;
 		////////////////////////////////////////
-		
+
 		std::cout << "Test assigning to a variable with the same dimensions a = b: ";
 		eval("a = b");
 		if(a34.isApprox(b34)) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test assigning to a variable with different dimensions a = c: ";
 		eval("a = c");
 		if(var("a").matrix().isApprox(c43) && a34.isApprox(b34)) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
 		var("a").setShared(a34);
-		
+
 		std::cout << "Test creating a new variable x = [1,2;3,4]: ";
 		resultValue = eval("x = [1,2;3,4]");
 		if(var("x").matrix().isApprox(resultValue.matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test assigning to a variable coefficient a(i,j) = s: ";
 		eval("a(1, 2) = s");
 		if(a34(1, 2) == s) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
 		std::cout << "Test assigning to a variable submatrix block a(0:1,1:2) = x: ";
 		resultValue = eval("a(0:1,1:2) = x");
 		if(a34.block(0,1,2,2).isApprox(var("x").matrix())) std::cout << "OK" << std::endl;
 		else { std::cout << "FAIL" << std::endl; ++numFails; }
-		
+
         try {
             std::cout << "Test bad function call: ";
             resultValue = eval("foobar(-3)"); // <-- Should NOT succeed!!!
