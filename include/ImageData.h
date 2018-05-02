@@ -20,6 +20,7 @@ public:
   RGBImageData(char const* filename);
   RGBImageData(int x, int y);
   ~RGBImageData();
+  unsigned char* getRawData() {return this->rawData;}
   RGBPixel getPixel(int x, int y);
   bool setPixel(RGBPixel pixel, int x, int y);
   int getWidth() {return this->width;}
@@ -36,6 +37,7 @@ public:
   YImageData(double* rawData) {this->rawData = rawData; this->fromCALLOC = false;}
   YImageData(int x, int y);
   ~YImageData();
+  double* getRawData() {return this->rawData;}
   double getPixel(int x, int y);
   bool setPixel(double pixel, int x, int y);
   int getWidth() {return this->width;}

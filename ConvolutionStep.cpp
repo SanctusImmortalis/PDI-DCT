@@ -4,7 +4,7 @@
 
 void RGBtoYStep::run(){
   ConvolutionDataSet* ds = (ConvolutionDataSet*) (this->dataSet);
-  if(ds!=NULL){
+  if(this->isSetup && ds!=NULL){
     if(ds->rgbsource->getWidth() != ds->ysource->getWidth() || ds->rgbsource->getHeight() != ds->ysource->getHeight()){
       ds->result = CONVERSION_FAIL;
       return;
@@ -17,6 +17,7 @@ void RGBtoYStep::run(){
     }
     if(!res) ds->result = CONVERSION_FAIL;
   }
+  this->nextStep->run();
 }
 
 bool RGBtoYStep::func(int x, int y, int z){
@@ -29,7 +30,7 @@ bool RGBtoYStep::func(int x, int y, int z){
 
 void ConvolutionStep::run(){
   ConvolutionDataSet* ds = (ConvolutionDataSet*) (this->dataSet);
-  if(ds!=NULL && ds->result==CONVOLUTION_SUCCESS){
+  if(this->isSetup && ds!=NULL){
     if(ds->rgbsource->getWidth() != ds->rgbdest->getWidth() || ds->rgbsource->getHeight() != ds->rgbdest->getHeight() || ds->ysource->getWidth() != ds->ydest->getWidth() || ds->ysource->getHeight() != ds->ydest->getHeight()){
       ds->result = CONVOLUTION_FAIL;
       return;
@@ -59,20 +60,24 @@ bool ConvolutionStep::func(int x, int y, int z){
   int j = - (ds->midy);
   int ilast = i + ds->mask->getWidth();
   int jlast = j + ds->mask->getHeight();
-  for(;i<ilast;i++){
-    for(;j<jlast;j++){
+  for(i = - (ds->midx);i<ilast;i++){
+    for(j = - (ds->midy);j<jlast;j++){
       RGBPixel rgbpix = ds->rgbsource->getPixel(x - i, y - j);
-      iaux = (int) (rgbpix.r * ds->mask->getPixel(ds->midx - i, ds->midy - j));
+      iaux = (int) (rgbpix.r * ds->mask->getPixel(i + (ds->midx), j + (ds->midy)));
       rgbres.r += iaux;
-      iaux = (int) (rgbpix.g * ds->mask->getPixel(ds->midx - i, ds->midy - j));
+      iaux = (int) (rgbpix.g * ds->mask->getPixel(i + (ds->midx), j + (ds->midy)));
       rgbres.g += iaux;
-      iaux = (int) (rgbpix.b * ds->mask->getPixel(ds->midx - i, ds->midy - j));
+      iaux = (int) (rgbpix.b * ds->mask->getPixel(i + (ds->midx), j + (ds->midy)));
       rgbres.b += iaux;
-      daux = ds->ysource->getPixel(x-i, y-j) * ds->mask->getPixel(ds->midx - i, ds->midy - j);
+      daux = ds->ysource->getPixel(x-i, y-j) * ds->mask->getPixel(i + (ds->midx), j + (ds->midy));
       yres += daux;
     }
   }
+  rgbres.r += ds->rgboffset;
+  rgbres.g += ds->rgboffset;
+  rgbres.b += ds->rgboffset;
+  yres += ds->yoffset;
   ds->rgbdest->setPixel(rgbres, x, y);
-  ds->ydest->setPixel(yres, x, y);
+  ds->ydest->setPixel(clampY(yres), x, y);
   return true;
 }

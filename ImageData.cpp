@@ -4,11 +4,15 @@
 #include "include/stb_image.h"
 
 unsigned char clampRGB(int p){
-  return (unsigned char) (p<0)?0:((p>255)?255:p);
+  if(p<0) return (unsigned char) 0;
+  else if(p>255) return (unsigned char) 255;
+  else return (unsigned char) p;
 }
 
 double clampY(double p){
-  return (p<0.0f)?0.0f:((p>1.0f)?1.0f:p);
+  if(p<0.0f) return 0.0f;
+  else if(p>1.0f) return 1.0f;
+  else return p;
 }
 
 RGBImageData::RGBImageData(char const* filename){
@@ -87,7 +91,7 @@ double YImageData::getPixel(int x, int y){
   if(isOutOfBounds(x, y)){
     return 0.0f;
   }else{
-    int coord = (x + y*(this->width))*3;
+    int coord = (x + y*(this->width));
     double* arr = this->rawData;
     return arr[coord];
   }
@@ -99,6 +103,6 @@ bool YImageData::setPixel(double pixel, int x, int y){
   }
   int coord = (x + y*(this->width));
   double* arr = this->rawData;
-  arr[coord] = clampY(pixel);
+  arr[coord] = pixel;
   return true;
 }
