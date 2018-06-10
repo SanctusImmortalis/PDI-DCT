@@ -68,6 +68,59 @@ bool RGBImageData::setPixel(RGBPixel pixel, int x, int y){
   arr[coord + 2] = clampRGB(pixel.b);
   return true;
 }
+///////
+
+MonoImageData::MonoImageData(char const* filename){
+  this->rawData = stbi_load(filename, &(this->width), &(this->height), &(this->nOfChannels), 1);
+  this->fromSTBI = true;
+  this->fromCALLOC = false;
+}
+
+MonoImageData::MonoImageData(int x, int y){
+  if(x>=0 && y>=0){
+    this->width = x;
+    this->height = y;
+    this->nOfChannels = 1;
+    this->rawData = (unsigned char*) calloc(x*y, sizeof(unsigned char));
+    this->fromCALLOC = true;
+  }else{
+    this->width = -1;
+    this->height = -1;
+    this->nOfChannels = 0;
+    this->rawData = NULL;
+    this->fromCALLOC = false;
+  }
+  this->fromSTBI = false;
+}
+
+MonoImageData::~MonoImageData(){
+  if(fromSTBI) stbi_image_free(this->rawData);
+  else if(fromCALLOC) free(this->rawData);
+}
+
+unsigned char MonoImageData::getPixel(int x, int y){
+  unsigned char pix;
+  if(isOutOfBounds(x, y)){
+    pix.r = pix.g = pix.b = 0;
+  }else{
+    int coord = (x + y*(this->width));
+    unsigned char* arr = this->rawData;
+    pix = arr[coord];
+  }
+  return pix;
+}
+
+bool MonoImageData::setPixel(unsigned char pixel, int x, int y){
+  if(isOutOfBounds(x, y)){
+    return false;
+  }
+  int coord = (x + y*(this->width));
+  unsigned char* arr = this->rawData;
+  arr[coord] = clampRGB(pixel);
+  return true;
+}
+
+//////
 
 YImageData::YImageData(int x, int y){
   if(x>=0 && y>=0){

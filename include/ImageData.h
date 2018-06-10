@@ -31,6 +31,24 @@ protected:
   bool fromSTBI, fromCALLOC;
 };
 
+class MonoImageData : public PipelineData<unsigned char*>{
+public:
+  MonoImageData() {this->width = -1; this->height= -1; this->nOfChannels = 0; this->fromSTBI = false; this->fromCALLOC = false;}
+  MonoImageData(unsigned char* rawData) {this->width = -1; this->height= -1; this->nOfChannels = 0; this->rawData = rawData; this->fromSTBI = false; this->fromCALLOC = false;}
+  MonoImageData(char const* filename);
+  MonoImageData(int x, int y);
+  ~MonoImageData();
+  unsigned char* getRawData() {return this->rawData;}
+  unsigned char getPixel(int x, int y);
+  bool setPixel(unsigned char pixel, int x, int y);
+  int getWidth() {return this->width;}
+  int getHeight() {return this->height;}
+  bool isOutOfBounds(int x, int y) {return (x<0)||(y<0)||(x>=(this->width))||(y>=(this->height));}
+protected:
+  int width, height, nOfChannels;
+  bool fromSTBI, fromCALLOC;
+};
+
 class YImageData : public PipelineData<double*>{
 public:
   YImageData() {this->fromCALLOC = false;}
