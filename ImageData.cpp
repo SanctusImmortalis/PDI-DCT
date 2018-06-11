@@ -101,7 +101,7 @@ MonoImageData::~MonoImageData(){
 unsigned char MonoImageData::getPixel(int x, int y){
   unsigned char pix;
   if(isOutOfBounds(x, y)){
-    pix.r = pix.g = pix.b = 0;
+    pix = 0;
   }else{
     int coord = (x + y*(this->width));
     unsigned char* arr = this->rawData;

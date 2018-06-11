@@ -21,7 +21,7 @@ MonoImageData* ydest;
 RGBImageData* rgbdest;
 
 int main(int argc, char** argv){
-  DCTDataSet dataSet;
+  DCTDataSet* dataSet;
 
   rgbsource = new RGBImageData("lena256color.jpg");
   ysource = new MonoImageData("lena256.jpg");
